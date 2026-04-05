@@ -1,0 +1,982 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from './firebase.service';
+export declare class UsersService {
+    private prisma;
+    private firebaseService;
+    constructor(prisma: PrismaService, firebaseService: FirebaseService);
+    findAll(): Promise<({
+        _count: {
+            reports: number;
+            warnings: number;
+            rewards: number;
+            accountLinks: number;
+            salaryRecords: number;
+            attendance: number;
+        };
+    } & {
+        id: string;
+        name: string;
+        username: string;
+        password: string;
+        fullName: string | null;
+        age: number | null;
+        education: string | null;
+        province: string | null;
+        gender: string | null;
+        masterCard: string | null;
+        platform: string | null;
+        allowedLeaves: number;
+        currentBalance: number;
+        salary: number | null;
+        monthlyVideoTarget: number | null;
+        startDate: Date;
+        fcmToken: string | null;
+        photo1: string | null;
+        photo2: string | null;
+        photo3: string | null;
+        role: string;
+        isBlocked: boolean;
+        blockedReason: string | null;
+        blockedAt: Date | null;
+    })[]>;
+    createEmployee(data: any): Promise<{
+        id: string;
+        name: string;
+        username: string;
+        password: string;
+        fullName: string | null;
+        age: number | null;
+        education: string | null;
+        province: string | null;
+        gender: string | null;
+        masterCard: string | null;
+        platform: string | null;
+        allowedLeaves: number;
+        currentBalance: number;
+        salary: number | null;
+        monthlyVideoTarget: number | null;
+        startDate: Date;
+        fcmToken: string | null;
+        photo1: string | null;
+        photo2: string | null;
+        photo3: string | null;
+        role: string;
+        isBlocked: boolean;
+        blockedReason: string | null;
+        blockedAt: Date | null;
+    }>;
+    updateEmployee(id: string, data: any): Promise<{
+        id: string;
+        name: string;
+        username: string;
+        password: string;
+        fullName: string | null;
+        age: number | null;
+        education: string | null;
+        province: string | null;
+        gender: string | null;
+        masterCard: string | null;
+        platform: string | null;
+        allowedLeaves: number;
+        currentBalance: number;
+        salary: number | null;
+        monthlyVideoTarget: number | null;
+        startDate: Date;
+        fcmToken: string | null;
+        photo1: string | null;
+        photo2: string | null;
+        photo3: string | null;
+        role: string;
+        isBlocked: boolean;
+        blockedReason: string | null;
+        blockedAt: Date | null;
+    }>;
+    deleteEmployee(id: string): Promise<{
+        id: string;
+        name: string;
+        username: string;
+        password: string;
+        fullName: string | null;
+        age: number | null;
+        education: string | null;
+        province: string | null;
+        gender: string | null;
+        masterCard: string | null;
+        platform: string | null;
+        allowedLeaves: number;
+        currentBalance: number;
+        salary: number | null;
+        monthlyVideoTarget: number | null;
+        startDate: Date;
+        fcmToken: string | null;
+        photo1: string | null;
+        photo2: string | null;
+        photo3: string | null;
+        role: string;
+        isBlocked: boolean;
+        blockedReason: string | null;
+        blockedAt: Date | null;
+    }>;
+    findOne(id: string): Promise<{
+        reports: {
+            id: string;
+            employeeId: string;
+            submittedAt: Date;
+            tiktokUrl: string;
+            status: string;
+            dateString: string;
+        }[];
+        warnings: {
+            id: string;
+            employeeId: string;
+            reason: string | null;
+            issuedAt: Date;
+            type: string;
+        }[];
+        rewards: {
+            id: string;
+            employeeId: string;
+            reason: string;
+            issuedAt: Date;
+        }[];
+        receivedNotes: {
+            id: string;
+            createdAt: Date;
+            employeeId: string;
+            content: string;
+        }[];
+        accountLinks: {
+            id: string;
+            createdAt: Date;
+            platform: string | null;
+            url: string;
+            employeeId: string;
+        }[];
+        salaryRecords: {
+            id: string;
+            employeeId: string;
+            paidAt: Date;
+            amount: number;
+            notes: string | null;
+        }[];
+        warningRequests: {
+            id: string;
+            createdAt: Date;
+            employeeId: string;
+            reason: string;
+            status: string;
+            type: string;
+            autoGenerated: boolean;
+            reviewedAt: Date | null;
+        }[];
+        attendance: {
+            id: string;
+            employeeId: string;
+            status: string;
+            notes: string | null;
+            date: string;
+            videoLinks: string | null;
+            videoCount: number;
+            checkInTime: Date;
+        }[];
+        performanceReviews: {
+            id: string;
+            createdAt: Date;
+            employeeId: string;
+            notes: string | null;
+            month: string;
+            rating: number;
+        }[];
+        contracts: {
+            id: string;
+            createdAt: Date;
+            employeeId: string;
+            title: string;
+            filePath: string;
+        }[];
+        monthlyTargets: {
+            id: string;
+            createdAt: Date;
+            employeeId: string;
+            month: string;
+            targetCount: number;
+            achievedCount: number;
+        }[];
+        leaveRequests: {
+            id: string;
+            createdAt: Date;
+            startDate: string;
+            employeeId: string;
+            reason: string;
+            status: string;
+            type: string;
+            reviewedAt: Date | null;
+            endDate: string;
+            adminNotes: string | null;
+        }[];
+        salaryChangeLogs: {
+            id: string;
+            employeeId: string;
+            oldSalary: number;
+            newSalary: number;
+            reason: string | null;
+            changedAt: Date;
+        }[];
+    } & {
+        id: string;
+        name: string;
+        username: string;
+        password: string;
+        fullName: string | null;
+        age: number | null;
+        education: string | null;
+        province: string | null;
+        gender: string | null;
+        masterCard: string | null;
+        platform: string | null;
+        allowedLeaves: number;
+        currentBalance: number;
+        salary: number | null;
+        monthlyVideoTarget: number | null;
+        startDate: Date;
+        fcmToken: string | null;
+        photo1: string | null;
+        photo2: string | null;
+        photo3: string | null;
+        role: string;
+        isBlocked: boolean;
+        blockedReason: string | null;
+        blockedAt: Date | null;
+    }>;
+    addSalaryRecord(id: string, body: any): Promise<{
+        id: string;
+        employeeId: string;
+        paidAt: Date;
+        amount: number;
+        notes: string | null;
+    }>;
+    addAccountLink(id: string, body: any): Promise<{
+        id: string;
+        createdAt: Date;
+        platform: string | null;
+        url: string;
+        employeeId: string;
+    }>;
+    addWarning(id: string, body: any): Promise<{
+        id: string;
+        employeeId: string;
+        reason: string | null;
+        issuedAt: Date;
+        type: string;
+    }>;
+    createWarningRequest(employeeId: string, type: string, reason: string, autoGenerated?: boolean): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        autoGenerated: boolean;
+        reviewedAt: Date | null;
+    }>;
+    getPendingWarningRequests(): Promise<({
+        employee: {
+            id: string;
+            name: string;
+            fullName: string;
+            platform: string;
+            photo1: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        autoGenerated: boolean;
+        reviewedAt: Date | null;
+    })[]>;
+    getAllWarningRequests(): Promise<({
+        employee: {
+            id: string;
+            name: string;
+            fullName: string;
+            photo1: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        autoGenerated: boolean;
+        reviewedAt: Date | null;
+    })[]>;
+    approveWarningRequest(requestId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        autoGenerated: boolean;
+        reviewedAt: Date | null;
+    }>;
+    rejectWarningRequest(requestId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        autoGenerated: boolean;
+        reviewedAt: Date | null;
+    }>;
+    removeWarning(warningId: string): Promise<{
+        id: string;
+        employeeId: string;
+        reason: string | null;
+        issuedAt: Date;
+        type: string;
+    }>;
+    addReward(id: string, body: any): Promise<{
+        id: string;
+        employeeId: string;
+        reason: string;
+        issuedAt: Date;
+    }>;
+    addNote(id: string, body: any): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        content: string;
+    }>;
+    saveFcmToken(id: string, token: string): Promise<{
+        id: string;
+        name: string;
+        username: string;
+        password: string;
+        fullName: string | null;
+        age: number | null;
+        education: string | null;
+        province: string | null;
+        gender: string | null;
+        masterCard: string | null;
+        platform: string | null;
+        allowedLeaves: number;
+        currentBalance: number;
+        salary: number | null;
+        monthlyVideoTarget: number | null;
+        startDate: Date;
+        fcmToken: string | null;
+        photo1: string | null;
+        photo2: string | null;
+        photo3: string | null;
+        role: string;
+        isBlocked: boolean;
+        blockedReason: string | null;
+        blockedAt: Date | null;
+    }>;
+    createNotification(employeeId: string, message: string, title?: string, isAdminOnly?: boolean): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        message: string;
+        isRead: boolean;
+        isAdminOnly: boolean;
+    }>;
+    deleteNotification(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        message: string;
+        isRead: boolean;
+        isAdminOnly: boolean;
+    }>;
+    getAdminNotifications(): Promise<({
+        employee: {
+            id: string;
+            name: string;
+            fullName: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        message: string;
+        isRead: boolean;
+        isAdminOnly: boolean;
+    })[]>;
+    getEmployeeNotifications(employeeId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        message: string;
+        isRead: boolean;
+        isAdminOnly: boolean;
+    }[]>;
+    markNotificationRead(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        message: string;
+        isRead: boolean;
+        isAdminOnly: boolean;
+    }>;
+    recordAttendance(employeeId: string, videoLinks: string[], notes?: string): Promise<{
+        id: string;
+        employeeId: string;
+        status: string;
+        notes: string | null;
+        date: string;
+        videoLinks: string | null;
+        videoCount: number;
+        checkInTime: Date;
+    }>;
+    getEmployeeAttendance(employeeId: string): Promise<{
+        id: string;
+        employeeId: string;
+        status: string;
+        notes: string | null;
+        date: string;
+        videoLinks: string | null;
+        videoCount: number;
+        checkInTime: Date;
+    }[]>;
+    getAllAttendanceToday(): Promise<({
+        employee: {
+            id: string;
+            name: string;
+            fullName: string;
+            photo1: string;
+        };
+    } & {
+        id: string;
+        employeeId: string;
+        status: string;
+        notes: string | null;
+        date: string;
+        videoLinks: string | null;
+        videoCount: number;
+        checkInTime: Date;
+    })[]>;
+    sendChatMessage(employeeId: string, content: string, isFromAdmin: boolean): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        content: string;
+        isRead: boolean;
+        isFromAdmin: boolean;
+    }>;
+    getChatMessages(employeeId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        content: string;
+        isRead: boolean;
+        isFromAdmin: boolean;
+    }[]>;
+    getEmployeeChatMessages(employeeId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        content: string;
+        isRead: boolean;
+        isFromAdmin: boolean;
+    }[]>;
+    getUnreadCountForAdmin(): Promise<number>;
+    getUnreadCountForEmployee(employeeId: string): Promise<number>;
+    logActivity(action: string, details?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        action: string;
+        details: string | null;
+        performedBy: string;
+    }>;
+    getActivityLogs(take?: number): Promise<{
+        id: string;
+        createdAt: Date;
+        action: string;
+        details: string | null;
+        performedBy: string;
+    }[]>;
+    addPerformanceReview(employeeId: string, month: string, rating: number, notes?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        notes: string | null;
+        month: string;
+        rating: number;
+    }>;
+    getPerformanceReviews(employeeId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        notes: string | null;
+        month: string;
+        rating: number;
+    }[]>;
+    addContract(employeeId: string, title: string, filePath: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        title: string;
+        filePath: string;
+    }>;
+    deleteContract(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        title: string;
+        filePath: string;
+    }>;
+    createEvent(title: string, date: string, type?: string, description?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        type: string;
+        date: string;
+        title: string;
+        description: string | null;
+    }>;
+    getEvents(): Promise<{
+        id: string;
+        createdAt: Date;
+        type: string;
+        date: string;
+        title: string;
+        description: string | null;
+    }[]>;
+    deleteEvent(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        type: string;
+        date: string;
+        title: string;
+        description: string | null;
+    }>;
+    getSetting(key: string): Promise<{
+        id: string;
+        key: string;
+        value: string;
+        updatedAt: Date;
+    }>;
+    setSetting(key: string, value: string): Promise<{
+        id: string;
+        key: string;
+        value: string;
+        updatedAt: Date;
+    }>;
+    getAllSettings(): Promise<{
+        id: string;
+        key: string;
+        value: string;
+        updatedAt: Date;
+    }[]>;
+    getStats(): Promise<{
+        totalEmployees: number;
+        totalReports: number;
+        totalWarnings: number;
+        totalRewards: number;
+        totalSalaryPaid: number;
+        pendingWarnings: number;
+        attendanceToday: number;
+        reportsLast7Days: any[];
+    }>;
+    setMonthlyTarget(employeeId: string, month: string, targetCount: number): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        month: string;
+        targetCount: number;
+        achievedCount: number;
+    }>;
+    getMonthlyTarget(employeeId: string, month: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        month: string;
+        targetCount: number;
+        achievedCount: number;
+    }>;
+    updateTargetAchieved(employeeId: string, increment: number): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        month: string;
+        targetCount: number;
+        achievedCount: number;
+    }>;
+    getAllMonthlyTargets(month: string): Promise<({
+        employee: {
+            id: string;
+            name: string;
+            fullName: string;
+            platform: string;
+            monthlyVideoTarget: number;
+            photo1: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        month: string;
+        targetCount: number;
+        achievedCount: number;
+    })[]>;
+    createLeaveRequest(employeeId: string, data: {
+        startDate: string;
+        endDate: string;
+        reason: string;
+        type?: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        startDate: string;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        reviewedAt: Date | null;
+        endDate: string;
+        adminNotes: string | null;
+    }>;
+    getPendingLeaveRequests(): Promise<({
+        employee: {
+            id: string;
+            name: string;
+            fullName: string;
+            platform: string;
+            allowedLeaves: number;
+            photo1: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        startDate: string;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        reviewedAt: Date | null;
+        endDate: string;
+        adminNotes: string | null;
+    })[]>;
+    getAllLeaveRequests(): Promise<({
+        employee: {
+            id: string;
+            name: string;
+            fullName: string;
+            photo1: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        startDate: string;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        reviewedAt: Date | null;
+        endDate: string;
+        adminNotes: string | null;
+    })[]>;
+    getEmployeeLeaveRequests(employeeId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        startDate: string;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        reviewedAt: Date | null;
+        endDate: string;
+        adminNotes: string | null;
+    }[]>;
+    approveLeaveRequest(id: string, adminNotes?: string): Promise<{
+        employee: {
+            id: string;
+            name: string;
+            username: string;
+            password: string;
+            fullName: string | null;
+            age: number | null;
+            education: string | null;
+            province: string | null;
+            gender: string | null;
+            masterCard: string | null;
+            platform: string | null;
+            allowedLeaves: number;
+            currentBalance: number;
+            salary: number | null;
+            monthlyVideoTarget: number | null;
+            startDate: Date;
+            fcmToken: string | null;
+            photo1: string | null;
+            photo2: string | null;
+            photo3: string | null;
+            role: string;
+            isBlocked: boolean;
+            blockedReason: string | null;
+            blockedAt: Date | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        startDate: string;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        reviewedAt: Date | null;
+        endDate: string;
+        adminNotes: string | null;
+    }>;
+    rejectLeaveRequest(id: string, adminNotes?: string): Promise<{
+        employee: {
+            id: string;
+            name: string;
+            username: string;
+            password: string;
+            fullName: string | null;
+            age: number | null;
+            education: string | null;
+            province: string | null;
+            gender: string | null;
+            masterCard: string | null;
+            platform: string | null;
+            allowedLeaves: number;
+            currentBalance: number;
+            salary: number | null;
+            monthlyVideoTarget: number | null;
+            startDate: Date;
+            fcmToken: string | null;
+            photo1: string | null;
+            photo2: string | null;
+            photo3: string | null;
+            role: string;
+            isBlocked: boolean;
+            blockedReason: string | null;
+            blockedAt: Date | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        startDate: string;
+        employeeId: string;
+        reason: string;
+        status: string;
+        type: string;
+        reviewedAt: Date | null;
+        endDate: string;
+        adminNotes: string | null;
+    }>;
+    getLeaveStats(): Promise<{
+        total: number;
+        pending: number;
+        approved: number;
+        rejected: number;
+        onLeaveNow: ({
+            employee: {
+                id: string;
+                name: string;
+                fullName: string;
+                photo1: string;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            startDate: string;
+            employeeId: string;
+            reason: string;
+            status: string;
+            type: string;
+            reviewedAt: Date | null;
+            endDate: string;
+            adminNotes: string | null;
+        })[];
+    }>;
+    getLeaderboard(): Promise<{
+        id: string;
+        name: string;
+        fullName: string;
+        photo1: string;
+        platform: string;
+        reports: number;
+        warnings: number;
+        rewards: number;
+        attendance: number;
+        avgRating: number;
+        targetProgress: {
+            target: number;
+            achieved: number;
+        };
+        score: number;
+    }[]>;
+    getSalaryChangeLogs(employeeId: string): Promise<{
+        id: string;
+        employeeId: string;
+        oldSalary: number;
+        newSalary: number;
+        reason: string | null;
+        changedAt: Date;
+    }[]>;
+    changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{
+        message: string;
+    }>;
+    submitSelfAssessment(employeeId: string, month: string, rating: number, notes?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        notes: string | null;
+        month: string;
+        rating: number;
+    }>;
+    getSelfAssessment(employeeId: string, month: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        notes: string | null;
+        month: string;
+        rating: number;
+    }>;
+    generateWeeklyReport(): Promise<{
+        period: string;
+        totalReports: number;
+        totalAttendance: number;
+        totalWarnings: number;
+        totalRewards: number;
+        totalLeaveRequests: number;
+        totalEmployees: number;
+        days: any[];
+    }>;
+    getAchievements(employeeId: string): Promise<{
+        icon: string;
+        title: string;
+        description: string;
+        unlocked: boolean;
+    }[]>;
+    getMonthlyComparison(): Promise<{
+        currentMonth: string;
+        lastMonth: string;
+        reports: {
+            current: number;
+            last: number;
+            change: number;
+        };
+        warnings: {
+            current: number;
+            last: number;
+            change: number;
+        };
+        attendance: {
+            current: number;
+            last: number;
+            change: number;
+        };
+    }>;
+    createFinanceRequest(employeeId: string, amount: number, notes?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        status: string;
+        amount: number;
+        notes: string | null;
+        adminNotes: string | null;
+    }>;
+    getAllFinanceRequests(): Promise<({
+        employee: {
+            id: string;
+            fullName: string;
+            platform: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        status: string;
+        amount: number;
+        notes: string | null;
+        adminNotes: string | null;
+    })[]>;
+    getEmployeeFinanceRequests(empId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        status: string;
+        amount: number;
+        notes: string | null;
+        adminNotes: string | null;
+    }[]>;
+    approveFinanceRequest(id: string, adminNotes?: string): Promise<{
+        success: boolean;
+    }>;
+    rejectFinanceRequest(id: string, adminNotes?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        employeeId: string;
+        status: string;
+        amount: number;
+        notes: string | null;
+        adminNotes: string | null;
+    }>;
+    updateBalance(employeeId: string, amount: number, notes?: string): Promise<{
+        id: string;
+        name: string;
+        username: string;
+        password: string;
+        fullName: string | null;
+        age: number | null;
+        education: string | null;
+        province: string | null;
+        gender: string | null;
+        masterCard: string | null;
+        platform: string | null;
+        allowedLeaves: number;
+        currentBalance: number;
+        salary: number | null;
+        monthlyVideoTarget: number | null;
+        startDate: Date;
+        fcmToken: string | null;
+        photo1: string | null;
+        photo2: string | null;
+        photo3: string | null;
+        role: string;
+        isBlocked: boolean;
+        blockedReason: string | null;
+        blockedAt: Date | null;
+    }>;
+    getDailyOperations(): Promise<{
+        id: string;
+        fullName: string;
+        platform: string;
+        attendanceStatus: string;
+        videoCountToday: number;
+        todayLinks: string[];
+        originalTarget: number;
+        achievedTarget: number;
+    }[]>;
+    blockEmployee(id: string, reason?: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    unblockEmployee(id: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    permanentBan(id: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    getBlockedEmployees(): Promise<{
+        id: string;
+        name: string;
+        username: string;
+        fullName: string;
+        platform: string;
+        photo1: string;
+        blockedReason: string;
+        blockedAt: Date;
+    }[]>;
+}
