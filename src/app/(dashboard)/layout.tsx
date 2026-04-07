@@ -125,8 +125,6 @@ function DashboardInnerLayout({ children, isAdmin }: { children: React.ReactNode
   );
 
   return (
-    <AuthGuard>
-      <ToastProvider>
         <div className="flex h-screen bg-surfaceContainerLow text-onSurface" dir="rtl">
           {/* Desktop Sidebar */}
           <aside className={`sidebar-desktop flex-col justify-between p-4 bg-surface border-l border-outlineVariant/15 overflow-y-auto custom-scroll shrink-0 transition-all duration-300 ${collapsed ? 'w-20' : 'w-60'}`}>
