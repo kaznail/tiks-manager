@@ -92,6 +92,7 @@ model Report {
   submittedAt     DateTime       @default(now())
   status          String         @default("ON_TIME")
   dateString      String
+  adminNotes      String?
 }
 
 model Warning {

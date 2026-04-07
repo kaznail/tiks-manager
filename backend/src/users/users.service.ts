@@ -2,10 +2,15 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { FirebaseService } from './firebase.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService, private firebaseService: FirebaseService) {}
+  constructor(
+    private prisma: PrismaService, 
+    private firebaseService: FirebaseService,
+    private notificationsGateway: NotificationsGateway
+  ) {}
 
   // ==================== EMPLOYEE CRUD ====================
 
@@ -319,9 +324,19 @@ export class UsersService {
   // ==================== CHAT ====================
 
   async sendChatMessage(employeeId: string, content: string, isFromAdmin: boolean) {
-    return this.prisma.chatMessage.create({
+    const msg = await this.prisma.chatMessage.create({
       data: { employeeId, content, isFromAdmin }
     });
+    
+    // Emit notification to employee
+    if (isFromAdmin) {
+      this.notificationsGateway.sendNotificationToUser(employeeId, {
+        type: 'chat',
+        message: 'رسالة جديدة من المدير 💬'
+      });
+    }
+    
+    return msg;
   }
 
   async getChatMessages(employeeId: string) {
@@ -489,12 +504,24 @@ export class UsersService {
 
   async setBulkTarget(target: number) {
     await this.logActivity('تحديد هدف جماعي', `تم تعميم هدف شهري (${target} فيديو) لجميع الموظفين`);
-    // Update employee records
+    const month = new Date().toISOString().substring(0, 7);
+    
+    // Update base employee records
     await this.prisma.employee.updateMany({
       where: { role: 'employee' },
       data: { monthlyVideoTarget: target }
     });
-    return { success: true, message: 'تم تعميم الهدف بنجاح' };
+    
+    // Update existing monthly targets
+    const employees = await this.prisma.employee.findMany({ where: { role: 'employee' } });
+    for (const emp of employees) {
+      await this.prisma.monthlyTarget.upsert({
+        where: { employeeId_month: { employeeId: emp.id, month } },
+        update: { targetCount: target }, // Modifies target without resetting achievedCount
+        create: { employeeId: emp.id, month, targetCount: target, achievedCount: 0 }
+      });
+    }
+    return { success: true, message: 'تم تعميم الهدف بنجاح لجميع الموظفين' };
   }
 
   async getMonthlyTarget(employeeId: string, month: string) {

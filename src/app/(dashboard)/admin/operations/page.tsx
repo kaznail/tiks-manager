@@ -77,22 +77,38 @@ export default function OperationsDashboard() {
   }, []);
 
   const handleAction = async (id: string, action: 'approve' | 'reject') => {
+    let bodyData: any = {};
+    if (action === 'reject') {
+      const reason = prompt('يرجى تحديد سبب الرفض (ليعرف الموظف سبب رفض تقريره):', 'مثلاً: جودة ضعيفة');
+      if (reason === null) return; // User cancelled
+      bodyData.reason = reason;
+    }
+    
     setProcessingIds(prev => new Set(prev).add(id));
     try {
       await fetch(`${API_URL}/reports/${id}/${action}`, {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken() }
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify(bodyData)
       });
     } catch (e) { console.error(e); }
     setProcessingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
   };
 
   const handleBulkAction = async (ids: string[], action: 'approve' | 'reject') => {
+    let bodyData: any = {};
+    if (action === 'reject') {
+      const reason = prompt(`يرجى تحديد سبب الرفض الجماعي لـ ${ids.length} رابط:`, 'مثلاً: راجع القوانين المتبعة');
+      if (reason === null) return; // User cancelled
+      bodyData.reason = reason;
+    }
+    
     ids.forEach(id => setProcessingIds(prev => new Set(prev).add(id)));
     await Promise.all(ids.map(id =>
       fetch(`${API_URL}/reports/${id}/${action}`, {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken() }
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify(bodyData)
       }).catch(console.error)
     ));
     fetchData(true);

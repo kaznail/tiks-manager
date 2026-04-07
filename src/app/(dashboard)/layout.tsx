@@ -4,18 +4,20 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Home, Users, BarChart2, Bell, LogOut, FileText, Archive, Shield, Calendar, MessageSquare, Settings, Activity, Trophy, Palmtree, Menu, X, Search, ChevronRight, User, Banknote, MonitorPlay } from 'lucide-react';
 import AuthGuard from '../../components/AuthGuard';
 import ThemeToggle from '../../components/ThemeToggle';
-import { ToastProvider } from '../../components/Toast';
+import { ToastProvider, useToast } from '../../components/Toast';
 import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+// Client wrapper inside context so we can use useToast
+function DashboardInnerLayout({ children, isAdmin }: { children: React.ReactNode, isAdmin: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isAdmin = pathname.includes('admin');
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
@@ -24,6 +26,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const saved = localStorage.getItem('theme');
     if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
   }, []);
+
+  // Socket Connection for Real-Time Toast Notifications
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const role = localStorage.getItem('role');
+    const token = localStorage.getItem('token');
+    
+    // Employee only notifications, but you can enable it for admin too
+    if (userId && token && !isAdmin) {
+      const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001', {
+        query: { userId }
+      });
+
+      socket.on('notification', (payload: any) => {
+        // payload can be string or object
+        toast(typeof payload === 'string' ? payload : (payload.message || 'لديك إشعار جديد'), 'info');
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [toast, isAdmin]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -153,6 +178,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </main>
           </div>
         </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAdmin = pathname.includes('admin');
+  return (
+    <AuthGuard>
+      <ToastProvider>
+        <DashboardInnerLayout isAdmin={isAdmin}>
+          {children}
+        </DashboardInnerLayout>
       </ToastProvider>
     </AuthGuard>
   );

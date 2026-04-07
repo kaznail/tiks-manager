@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
+import { resolveFileUrl } from '../../../../utils/resolveFileUrl';
 
 // ─── Constants ───
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -68,12 +69,16 @@ export default function ReportsPage() {
   };
 
   const handleTriggerMissing = async () => {
-    if (!confirm('هل أنت متأكد من إصدار تحذيرات لجميع الموظفين الذين لم يرسلوا تقاريرهم اليوم؟')) return;
+    let checkDateStr = new Date().toISOString().split('T')[0];
+    const dateInput = prompt('أدخل التاريخ للفحص (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+    if (!dateInput) return;
+
     setTriggering(true);
     try {
       const res = await fetch(API_URL + '/reports/trigger-missing-reports', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + getToken() }
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify({ date: dateInput })
       });
       const data = await res.json();
       if (res.ok) alert(data.message || 'تم الإصدار بنجاح');
@@ -82,6 +87,7 @@ export default function ReportsPage() {
       alert('فشل الاتصال بالخادم');
     }
     setTriggering(false);
+    fetchReports();
   };
 
   return (
@@ -93,7 +99,7 @@ export default function ReportsPage() {
         </div>
         <div className="flex gap-2">
           <button onClick={handleTriggerMissing} disabled={triggering} className="bg-warning text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all hover:-translate-y-1 disabled:opacity-50 text-sm">
-            <span>⚠️</span> {triggering ? 'جاري الفحص...' : 'فحص المتغيبين اليوم'}
+            <span>⚠️</span> {triggering ? 'جاري الفحص...' : 'فحص المتغيبين'}
           </button>
           <button onClick={() => window.print()} className="no-print gradient-bg text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all hover:-translate-y-1">
             <span>🖨️</span> تصدير
@@ -173,7 +179,7 @@ export default function ReportsPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         {report.employee?.photo1 ? (
-                          <img src={`${API_URL}${report.employee.photo1}`} className="w-8 h-8 rounded-full object-cover border border-outlineVariant/20 bg-surfaceContainerLow" alt="photo" />
+                          <img src={resolveFileUrl(report.employee.photo1)} className="w-8 h-8 rounded-full object-cover border border-outlineVariant/20 bg-surfaceContainerLow" alt="photo" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-surfaceContainer border border-outlineVariant/20 flex items-center justify-center text-xs text-onSurfaceVariant opacity-50">👤</div>
                         )}
@@ -181,10 +187,13 @@ export default function ReportsPage() {
                       </div>
                     </td>
                     <td className="p-4"><span className="text-xs bg-secondary/10 text-secondary px-2 py-0.5 rounded font-bold">{report.employee?.platform || '-'}</span></td>
-                    <td className="p-4">{getStatusBadge(report.status)}</td>
+                    <td className="p-4">{getStatusBadge(report.status, report.id)}</td>
                     <td className="p-4">
                       {report.tiktokUrl ? (
-                        <a href={report.tiktokUrl.startsWith('http') ? report.tiktokUrl : `https://${report.tiktokUrl}`} target="_blank" rel="noreferrer" className="text-primary hover:underline text-xs dir-ltr inline-block truncate max-w-[180px] font-bold" dir="ltr">{report.tiktokUrl}</a>
+                        <div>
+                          <a href={report.tiktokUrl.startsWith('http') ? report.tiktokUrl : `https://${report.tiktokUrl}`} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold text-sm bg-primary/10 px-3 py-1.5 rounded-lg dir-ltr inline-block max-w-[200px] truncate" dir="ltr">{report.tiktokUrl}</a>
+                          {report.adminNotes && <p className="text-[10px] text-error mt-1">الرفض: {report.adminNotes}</p>}
+                        </div>
                       ) : <span className="text-onSurfaceVariant text-sm">—</span>}
                     </td>
                   </tr>

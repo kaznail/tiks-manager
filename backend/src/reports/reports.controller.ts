@@ -23,8 +23,8 @@ export class ReportsController {
   }
 
   @Post('trigger-missing-reports')
-  triggerMissingReports() {
-    return this.reportsService.handleMissingReports();
+  triggerMissingReports(@Body() body: { date?: string }) {
+    return this.reportsService.handleMissingReports(body?.date);
   }
 
   @Post(':id/approve')
@@ -33,7 +33,7 @@ export class ReportsController {
   }
 
   @Post(':id/reject')
-  rejectReport(@Param('id') id: string) {
-    return this.reportsService.rejectReport(id);
+  rejectReport(@Param('id') id: string, @Body() body: { reason?: string }) {
+    return this.reportsService.rejectReport(id, body?.reason);
   }
 }
