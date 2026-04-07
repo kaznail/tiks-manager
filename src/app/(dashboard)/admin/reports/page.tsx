@@ -10,6 +10,7 @@ interface ReportEmployee {
   name: string;
   fullName?: string;
   platform?: string;
+  photo1?: string;
 }
 
 interface Report {
@@ -26,6 +27,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [triggering, setTriggering] = useState(false);
 
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
@@ -65,6 +67,23 @@ export default function ReportsPage() {
     }
   };
 
+  const handleTriggerMissing = async () => {
+    if (!confirm('هل أنت متأكد من إصدار تحذيرات لجميع الموظفين الذين لم يرسلوا تقاريرهم اليوم؟')) return;
+    setTriggering(true);
+    try {
+      const res = await fetch(API_URL + '/reports/trigger-missing-reports', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const data = await res.json();
+      if (res.ok) alert(data.message || 'تم الإصدار بنجاح');
+      else alert('حدث خطأ أثناء إصدار التحذيرات');
+    } catch (err) {
+      alert('فشل الاتصال بالخادم');
+    }
+    setTriggering(false);
+  };
+
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto animate-in fade-in duration-500 pb-10">
       <header className="flex justify-between items-start">
@@ -72,9 +91,14 @@ export default function ReportsPage() {
           <h1 className="text-display font-bold text-3xl mb-1 text-onSurface">سجل التقارير والإحصائيات</h1>
           <p className="text-onSurfaceVariant text-sm">متابعة جميع الروابط المرفوعة يومياً ومعرفة مستوى التزام كل موظف</p>
         </div>
-        <button onClick={() => window.print()} className="no-print gradient-bg text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all hover:-translate-y-1">
-          <span>🖨️</span> تصدير PDF
-        </button>
+        <div className="flex gap-2">
+          <button onClick={handleTriggerMissing} disabled={triggering} className="bg-warning text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all hover:-translate-y-1 disabled:opacity-50 text-sm">
+            <span>⚠️</span> {triggering ? 'جاري الفحص...' : 'فحص المتغيبين اليوم'}
+          </button>
+          <button onClick={() => window.print()} className="no-print gradient-bg text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all hover:-translate-y-1">
+            <span>🖨️</span> تصدير
+          </button>
+        </div>
       </header>
 
       {/* Stats */}
@@ -135,7 +159,7 @@ export default function ReportsPage() {
                 <tr className="border-b border-outlineVariant/20 text-onSurfaceVariant text-sm">
                   <th className="p-4 font-medium">#</th>
                   <th className="p-4 font-medium">التاريخ</th>
-                  <th className="p-4 font-medium">الموظف</th>
+                  <th className="p-4 font-medium text-right w-48">الموظف</th>
                   <th className="p-4 font-medium">المنصة</th>
                   <th className="p-4 font-medium">الحالة</th>
                   <th className="p-4 font-medium">الرابط</th>
@@ -146,7 +170,16 @@ export default function ReportsPage() {
                   <tr key={report.id || idx} className="border-b border-outlineVariant/10 hover:bg-surfaceContainerLow transition-colors">
                     <td className="p-4 text-xs text-onSurfaceVariant">{idx + 1}</td>
                     <td className="p-4 text-sm">{new Date(report.submittedAt).toLocaleString('ar-EG')}</td>
-                    <td className="p-4 font-bold text-sm">{report.employee?.fullName || report.employee?.name || 'غير معروف'}</td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        {report.employee?.photo1 ? (
+                          <img src={`${API_URL}${report.employee.photo1}`} className="w-8 h-8 rounded-full object-cover border border-outlineVariant/20 bg-surfaceContainerLow" alt="photo" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-surfaceContainer border border-outlineVariant/20 flex items-center justify-center text-xs text-onSurfaceVariant opacity-50">👤</div>
+                        )}
+                        <span className="font-bold text-sm truncate max-w-[120px]">{report.employee?.fullName || report.employee?.name || 'غير معروف'}</span>
+                      </div>
+                    </td>
                     <td className="p-4"><span className="text-xs bg-secondary/10 text-secondary px-2 py-0.5 rounded font-bold">{report.employee?.platform || '-'}</span></td>
                     <td className="p-4">{getStatusBadge(report.status)}</td>
                     <td className="p-4">

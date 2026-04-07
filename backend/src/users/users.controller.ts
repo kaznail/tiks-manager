@@ -240,6 +240,11 @@ export class UsersController {
     return this.usersService.getMonthlyTarget(empId, month);
   }
 
+  @Put('bulk-target')
+  setBulkTarget(@Body() body: { target: number }) {
+    return this.usersService.setBulkTarget(body.target);
+  }
+
   // ===== LEAVE REQUESTS =====
 
   @Get('leaves/pending')

@@ -109,7 +109,7 @@ export class ReportsService {
   async getPendingReports() {
     return this.prisma.report.findMany({
       where: { status: 'PENDING' },
-      include: { employee: { select: { id: true, name: true, fullName: true, platform: true } } },
+      include: { employee: { select: { id: true, name: true, fullName: true, platform: true, photo1: true } } },
       orderBy: { submittedAt: 'asc' },
     });
   }
@@ -150,7 +150,7 @@ export class ReportsService {
 
   async getReports() {
     return this.prisma.report.findMany({
-      include: { employee: { select: { id: true, name: true, fullName: true, platform: true } } },
+      include: { employee: { select: { id: true, name: true, fullName: true, platform: true, photo1: true } } },
       orderBy: { submittedAt: 'desc' },
     });
   }
@@ -206,5 +206,7 @@ export class ReportsService {
         });
       }
     }
+    
+    return { success: true, message: 'تم الانتهاء من فحص التقارير المفقودة وإصدار التحذيرات اللازمة.' };
   }
 }

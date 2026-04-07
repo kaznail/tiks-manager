@@ -26,10 +26,7 @@ export default function EmployeeDetailsPage() {
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [addingContract, setAddingContract] = useState(false);
 
-  // Monthly Target
-  const [targetMonth, setTargetMonth] = useState(new Date().toISOString().substring(0, 7));
-  const [targetCount, setTargetCount] = useState('');
-  const [settingTarget, setSettingTarget] = useState(false);
+  // Monthly Target removed as standalone, now part of Edit Info
 
   // Edit Employee
   const [editing, setEditing] = useState(false);
@@ -101,17 +98,7 @@ export default function EmployeeDetailsPage() {
     fetchDetails();
   };
 
-  const handleSetTarget = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/users/targets/set', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-      body: JSON.stringify({ employeeId: id, month: targetMonth, targetCount: parseInt(targetCount) })
-    });
-    setSettingTarget(false); setTargetCount('');
-    showMsg('تم تحديد الهدف الشهري بنجاح ✓');
-    fetchDetails();
-  };
+
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,7 +157,6 @@ export default function EmployeeDetailsPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => { setEditing(!editing); setEditData({ name: emp.name, fullName: emp.fullName, age: emp.age, province: emp.province, gender: emp.gender, masterCard: emp.masterCard, platform: emp.platform, salary: emp.salary, monthlyVideoTarget: emp.monthlyVideoTarget, allowedLeaves: emp.allowedLeaves }); }} className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold">✏️ تعديل البيانات</button>
-          <button onClick={() => setSettingTarget(!settingTarget)} className="bg-secondary text-white px-4 py-2 rounded-xl text-xs font-bold">🎯 تحديد الهدف</button>
           {emp.isBlocked ? (
             <button onClick={async () => { setActionLoading(true); await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${id}/unblock`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() } }); fetchDetails(); setActionLoading(false); }} disabled={actionLoading} className="bg-success text-white px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-50">✅ رفع الحظر</button>
           ) : (
@@ -203,15 +189,7 @@ export default function EmployeeDetailsPage() {
         </form>
       )}
 
-      {/* Set Monthly Target */}
-      {settingTarget && (
-        <form onSubmit={handleSetTarget} className="glass-card p-6 animate-in fade-in border-2 border-secondary/20 flex flex-wrap gap-4 items-end">
-          <div className="flex flex-col gap-1"><label className="text-xs font-bold text-onSurfaceVariant">الشهر</label><input type="month" value={targetMonth} onChange={e => setTargetMonth(e.target.value)} className="bg-surfaceContainerHigh p-3 rounded-lg outline-none text-sm" /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs font-bold text-onSurfaceVariant">عدد الفيديوهات المطلوب</label><input type="number" required min="1" value={targetCount} onChange={e => setTargetCount(e.target.value)} placeholder="مثال: 30" className="bg-surfaceContainerHigh p-3 rounded-lg outline-none text-sm" /></div>
-          <button type="submit" className="bg-secondary text-white px-6 py-3 rounded-xl font-bold text-sm">حفظ الهدف</button>
-          <button type="button" onClick={() => setSettingTarget(false)} className="bg-surfaceContainerHigh text-onSurfaceVariant px-6 py-3 rounded-xl font-bold text-sm">إلغاء</button>
-        </form>
-      )}
+
 
       {/* Main Info */}
       <div className="glass-card p-6 md:p-10 relative overflow-hidden">

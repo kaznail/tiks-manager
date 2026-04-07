@@ -44,7 +44,12 @@ export default function EmployeesPage() {
   const [masterCard, setMasterCard] = useState('');
   const [platform, setPlatform] = useState('تيك توك (TikTok)');
   const [allowedLeaves, setAllowedLeaves] = useState(String(DEFAULT_ALLOWED_LEAVES));
+  const [monthlyVideoTarget, setMonthlyVideoTarget] = useState('30');
   const [accountLinks, setAccountLinks] = useState<string[]>(['']);
+  
+  // Bulk target
+  const [bulkTarget, setBulkTarget] = useState('');
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
   
   // Files
   const [photo1, setPhoto1] = useState<File | null>(null);
@@ -100,6 +105,7 @@ export default function EmployeesPage() {
     formData.append('masterCard', masterCard);
     formData.append('platform', platform);
     formData.append('allowedLeaves', allowedLeaves);
+    formData.append('monthlyVideoTarget', monthlyVideoTarget);
 
     // filter empty links and make smart URLs
     const validLinks = accountLinks
@@ -121,7 +127,7 @@ export default function EmployeesPage() {
       });
       
       if (res.ok) {
-        setName(''); setUsername(''); setPassword(''); setSalary(''); setFullName(''); setAge(''); setEducation(''); setProvince(''); setMasterCard(''); setAllowedLeaves(String(DEFAULT_ALLOWED_LEAVES)); setAccountLinks(['']); setPhoto1(null); setPhoto2(null); setPhoto3(null);
+        setName(''); setUsername(''); setPassword(''); setSalary(''); setFullName(''); setAge(''); setEducation(''); setProvince(''); setMasterCard(''); setAllowedLeaves(String(DEFAULT_ALLOWED_LEAVES)); setMonthlyVideoTarget('30'); setAccountLinks(['']); setPhoto1(null); setPhoto2(null); setPhoto3(null);
         setCurrentStep(1);
         setSuccessMsg('تم إصدار الهوية وبطاقة الموظف بنجاح!');
         fetchEmployees();
@@ -147,6 +153,25 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleBulkUpdate = async () => {
+    if (!bulkTarget || isNaN(Number(bulkTarget))) return alert('يرجى إدخال رقم صحيح');
+    if (!confirm(`هل أنت متأكد من تعميم الهدف الشهري (${bulkTarget} فيديو) على جميع الموظفين؟`)) return;
+    setIsBulkLoading(true);
+    try {
+      const res = await fetch(API_URL + '/users/bulk-target', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify({ target: Number(bulkTarget) })
+      });
+      if (res.ok) {
+         alert('تم تعميم الهدف بنجاح ✓');
+         setBulkTarget('');
+         fetchEmployees();
+      } else alert('حدث خطأ');
+    } catch (e) { alert('فشل الاتصال'); }
+    setIsBulkLoading(false);
+  };
+
   /** Safe first character accessor for avatar display */
   const getInitial = (text?: string): string => {
     if (!text || text.length === 0) return 'م';
@@ -159,6 +184,10 @@ export default function EmployeesPage() {
         <div>
           <h1 className="text-display font-bold text-3xl mb-1 text-onSurface">إدارة الموظفين الشاملة</h1>
           <p className="text-onSurfaceVariant text-sm">أضف موظفاً جديداً بكامل أدق التفاصيل لعمل ملف متكامل له</p>
+        </div>
+        <div className="flex gap-2 items-center bg-surfaceContainerLow p-2 rounded-xl border border-outlineVariant/20">
+          <input type="number" placeholder="مثال: 30" value={bulkTarget} onChange={e => setBulkTarget(e.target.value)} className="bg-surfaceContainer p-2 text-sm rounded-lg outline-none w-24" />
+          <button disabled={isBulkLoading} onClick={handleBulkUpdate} className="bg-secondary text-white px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50">تحديد هدف للجميع</button>
         </div>
       </header>
 
@@ -241,6 +270,11 @@ export default function EmployeesPage() {
                    <div className="relative mt-2">
                      <span className="absolute -top-2 right-3 text-[10px] bg-surface px-1 text-onSurfaceVariant font-bold">عدد أيام الإجازة السنوية المسموحة</span>
                      <input type="number" value={allowedLeaves} onChange={e => setAllowedLeaves(e.target.value)} className="bg-surfaceContainerLow p-4 w-full rounded-xl outline-none focus:ring-2 focus:ring-primary border border-outlineVariant/20 text-sm font-bold text-primary" placeholder="مثال: 21" />
+                   </div>
+
+                   <div className="md:col-span-2 relative mt-2 border-2 border-secondary/20 rounded-xl bg-secondary/5">
+                     <span className="absolute -top-2 right-3 text-[10px] bg-surface px-1 text-secondary font-bold">الفيديوهات المطلوبة شهرياً (الهدف) *</span>
+                     <input type="number" required value={monthlyVideoTarget} onChange={e => setMonthlyVideoTarget(e.target.value)} className="bg-transparent p-4 w-full rounded-xl outline-none text-sm font-bold text-secondary text-center" placeholder="مثال: 30" />
                    </div>
 
                    <div className="relative mt-2">

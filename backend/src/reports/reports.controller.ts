@@ -22,6 +22,11 @@ export class ReportsController {
     return this.reportsService.getPendingReports();
   }
 
+  @Post('trigger-missing-reports')
+  triggerMissingReports() {
+    return this.reportsService.handleMissingReports();
+  }
+
   @Post(':id/approve')
   approveReport(@Param('id') id: string) {
     return this.reportsService.approveReport(id);

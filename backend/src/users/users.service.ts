@@ -39,6 +39,7 @@ export class UsersService {
         masterCard: data.masterCard,
         platform: data.platform,
         allowedLeaves: data.allowedLeaves !== undefined ? parseInt(data.allowedLeaves) : 21,
+        monthlyVideoTarget: data.monthlyVideoTarget !== undefined ? parseInt(data.monthlyVideoTarget) : 30,
         photo1: data.photo1,
         photo2: data.photo2,
         photo3: data.photo3,
@@ -484,6 +485,16 @@ export class UsersService {
       update: { targetCount },
       create: { employeeId, month, targetCount }
     });
+  }
+
+  async setBulkTarget(target: number) {
+    await this.logActivity('تحديد هدف جماعي', `تم تعميم هدف شهري (${target} فيديو) لجميع الموظفين`);
+    // Update employee records
+    await this.prisma.employee.updateMany({
+      where: { role: 'employee' },
+      data: { monthlyVideoTarget: target }
+    });
+    return { success: true, message: 'تم تعميم الهدف بنجاح' };
   }
 
   async getMonthlyTarget(employeeId: string, month: string) {
