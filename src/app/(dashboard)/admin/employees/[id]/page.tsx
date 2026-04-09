@@ -40,6 +40,38 @@ export default function EmployeeDetailsPage() {
   const [blockReason, setBlockReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Password Reset
+  const [newPassword, setNewPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState('');
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordStatus('كلمة المرور يجب أن لا تقل عن 6 أحرف');
+      return;
+    }
+    setResettingPassword(true);
+    setPasswordStatus('');
+    try {
+      const res = await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/users/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify({ password: newPassword })
+      });
+      if (res.ok) {
+        setPasswordStatus('✅ تم تغيير كلمة المرور بنجاح للموظف');
+        setNewPassword('');
+        setTimeout(() => setPasswordStatus(''), 4000);
+      } else {
+        setPasswordStatus('❌ حدث خطأ أثناء التغيير');
+      }
+    } catch (err) {
+      setPasswordStatus('❌ خطأ في الاتصال');
+    }
+    setResettingPassword(false);
+  };
+
   // Manage Photos
   const [photoTarget, setPhotoTarget] = useState<'photo1' | 'photo2' | 'photo3' | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -261,6 +293,48 @@ export default function EmployeeDetailsPage() {
             <InfoBox label="المنصة" value={emp.platform || 'غير محدد'} color="secondary" />
             <InfoBox label="إجازات مسموحة" value={emp.allowedLeaves ? emp.allowedLeaves + ' يوم' : '21 يوم'} color="primary" />
           </div>
+        </div>
+      </div>
+
+      {/* Login Credentials */}
+      <div className="glass-card p-6 border-2 border-primary/20 mt-6 md:mt-0 mb-6">
+        <h2 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+          <span>🔐</span> معلومات تسجيل الدخول (الحساب)
+        </h2>
+        <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-surfaceContainerLowest p-4 rounded-xl border border-outlineVariant/10">
+          <div className="flex-1 w-full">
+            <p className="text-sm font-bold mb-1">اسم المستخدم (للدخول):</p>
+            <p className="font-mono text-lg bg-surfaceContainerLow px-4 py-2 rounded-lg dir-ltr inline-block text-primary font-bold shadow-inner">
+              {emp.username}
+            </p>
+            <p className="text-xs text-onSurfaceVariant mt-2">
+              ⚠️ كلمة المرور الحالية مشفرة ولا يمكن لأحد رؤيتها. في حال نسيانها، يمكنك تعيين كلمة مرور جديدة من هنا.
+            </p>
+          </div>
+          
+          <form onSubmit={handleResetPassword} className="flex gap-2 w-full md:w-auto items-start">
+            <div className="flex flex-col gap-1 w-full">
+              <input 
+                type="text" 
+                placeholder="كلمة المرور الجديدة" 
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="bg-surfaceContainerHigh p-3 rounded-xl outline-none text-sm font-mono dir-ltr w-full md:w-64 border border-outlineVariant/20 focus:border-primary transition-colors"
+              />
+              {passwordStatus && (
+                <p className={`text-[10px] font-bold px-1 ${passwordStatus.includes('✅') ? 'text-success' : 'text-error'}`}>
+                  {passwordStatus}
+                </p>
+              )}
+            </div>
+            <button 
+              type="submit" 
+              disabled={resettingPassword}
+              className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold text-sm disabled:opacity-50 whitespace-nowrap shadow-md"
+            >
+              {resettingPassword ? 'جاري التغيير...' : 'إعادة تعيين'}
+            </button>
+          </form>
         </div>
       </div>
 
