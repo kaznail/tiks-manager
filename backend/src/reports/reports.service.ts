@@ -25,8 +25,13 @@ export class ReportsService {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // Check for duplicate URL
-    const existingUrl = await this.prisma.report.findUnique({ where: { tiktokUrl } });
+    // Normalize URL: Remove Query Parameters and trailing slashes for duplicate checking
+    const normalizedUrl = tiktokUrl.split('?')[0].replace(/\/$/, "");
+
+    // Check for duplicate URL using normalized URL matching
+    const existingUrl = await this.prisma.report.findFirst({ 
+      where: { tiktokUrl: { startsWith: normalizedUrl } } 
+    });
     if (existingUrl) {
       throw new BadRequestException('❌ هذا الرابط تم إرساله مسبقاً في النظام.');
     }
@@ -85,9 +90,11 @@ export class ReportsService {
           break;
         }
       } else {
-        // CASE 3: Fallback — simple substring check
-        const cleanUrl = linkLower.replace('https://', '').replace('http://', '').trim();
-        if (cleanUrl.length > 5 && urlLower.includes(cleanUrl)) {
+        // CASE 3: Fallback — strict base URL matching
+        const cleanLinkUrl = linkLower.split('?')[0].replace('https://', '').replace('http://', '').replace('www.', '').replace(/\/$/, "").trim();
+        const cleanSubmittedUrl = urlLower.split('?')[0].replace('https://', '').replace('http://', '').replace('www.', '').replace(/\/$/, "").trim();
+        
+        if (cleanLinkUrl.length > 5 && cleanSubmittedUrl.includes(cleanLinkUrl)) {
           isOwner = true;
           break;
         }
@@ -184,6 +191,34 @@ export class ReportsService {
     });
 
     for (const emp of employees) {
+      // 1. Check if employee is on leave today
+      const activeLeave = await this.prisma.leaveRequest.findFirst({
+        where: {
+          employeeId: emp.id,
+          startDate: { lte: todayStr },
+          endDate: { gte: todayStr }
+        }
+      });
+
+      if (activeLeave) {
+        if (activeLeave.status === 'APPROVED') {
+          // Employee is on an APPROVED vacation. Skip them silently.
+          continue; 
+        } else if (activeLeave.status === 'PENDING') {
+          // Employee requested a vacation but admin hasn't seen/approved it yet.
+          await this.prisma.notification.create({
+            data: {
+              employeeId: emp.id,
+              message: `ℹ️ تنبيه غياب مبرر: الموظف ${emp.name} يمتلك طلب إجازة (قيد الانتظار) لتاريخ ${todayStr}. يرجى مراجعة طلبات الإجازة لاعتمادها أو رفضها.`,
+              isAdminOnly: true,
+            }
+          });
+          // Also check whether they did submit a report anyway... Wait, if they are on pending leave, we should not issue a warning right now. 
+          continue;
+        }
+      }
+
+      // 2. Normal missing report check
       const report = await this.prisma.report.findFirst({
         where: { employeeId: emp.id, dateString: todayStr }
       });

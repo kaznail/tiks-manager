@@ -29,6 +29,8 @@ export default function ReportsPage() {
   const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [triggering, setTriggering] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
@@ -69,16 +71,17 @@ export default function ReportsPage() {
   };
 
   const handleTriggerMissing = async () => {
-    let checkDateStr = new Date().toISOString().split('T')[0];
-    const dateInput = prompt('أدخل التاريخ للفحص (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-    if (!dateInput) return;
+    setShowDatePicker(true);
+  };
 
+  const confirmTriggerMissing = async () => {
+    setShowDatePicker(false);
     setTriggering(true);
     try {
       const res = await fetch(API_URL + '/reports/trigger-missing-reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-        body: JSON.stringify({ date: dateInput })
+        body: JSON.stringify({ date: selectedDate })
       });
       const data = await res.json();
       if (res.ok) alert(data.message || 'تم الإصدار بنجاح');
@@ -203,6 +206,31 @@ export default function ReportsPage() {
           </div>
         )}
       </div>
+
+      {showDatePicker && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in">
+          <div className="bg-surface w-full max-w-md p-6 rounded-2xl shadow-xl">
+            <h3 className="text-xl font-bold mb-4 text-onSurface">اختيار تاريخ الفحص</h3>
+            <p className="text-sm text-onSurfaceVariant mb-4">اختر اليوم الذي تريد فحص غيابات وتقارير الموظفين فيه:</p>
+            <input 
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full bg-surfaceContainerLow border border-outlineVariant/20 p-4 rounded-xl text-onSurface mb-6 custom-scroll"
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowDatePicker(false)} className="px-5 py-2 text-onSurfaceVariant hover:bg-surfaceContainerHigh rounded-xl transition-colors font-bold">إلغاء</button>
+              <button 
+                onClick={confirmTriggerMissing} 
+                disabled={triggering}
+                className="bg-primary text-onPrimary px-6 py-2 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {triggering ? 'جاري الفحص...' : 'تأكيد الفحص'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -44,6 +44,9 @@ export default function EmployeeDetailsPage() {
   const [photoTarget, setPhotoTarget] = useState<'photo1' | 'photo2' | 'photo3' | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [contractFile, setContractFile] = useState<File | null>(null);
+
+  const [deletingWarningId, setDeletingWarningId] = useState<string | null>(null);
 
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
@@ -88,17 +91,41 @@ export default function EmployeeDetailsPage() {
     const formData = new FormData();
     formData.append('title', contractTitle);
     formData.append('file', contractFile);
-    await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/users/' + id + '/contracts', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + getToken() },
-      body: formData
-    });
-    setAddingContract(false); setContractTitle(''); setContractFile(null);
-    showMsg('تم رفع العقد بنجاح ✓');
-    fetchDetails();
+    try {
+      const token = getToken();
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${id}/contract`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      setContractTitle('');
+      setContractFile(null);
+      setAddingContract(false);
+      fetchDetails();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-
+  const handleDeleteWarning = async (warningId: string) => {
+    if (!confirm('هل أنت متأكد من إلغاء هذا التحذير؟')) return;
+    setDeletingWarningId(warningId);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/warnings/issued/${warningId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      if (res.ok) {
+        alert('تم رفع التحذير بنجاح');
+        fetchDetails();
+      } else {
+        alert('حدث خطأ أثناء رفع التحذير');
+      }
+    } catch (err) {
+      alert('تعذر الاتصال بالخادم');
+    }
+    setDeletingWarningId(null);
+  };
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,9 +376,19 @@ export default function EmployeeDetailsPage() {
           <h2 className="text-lg font-bold text-error mb-4">⚠️ التحذيرات ({emp.warnings?.length || 0})</h2>
           <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto custom-scroll pr-2">
             {emp.warnings?.length > 0 ? emp.warnings.map((w: any) => (
-              <div key={w.id} className="bg-error/5 border border-error/10 p-3 rounded-xl">
-                <p className="text-xs font-bold text-error">{w.type}</p>
-                <p className="text-[10px] text-onSurfaceVariant mt-1">{w.reason || 'بدون سبب'} — {new Date(w.issuedAt).toLocaleDateString('ar-EG')}</p>
+              <div key={w.id} className="bg-error/5 border border-error/10 p-3 rounded-xl flex justify-between items-start gap-4">
+                <div>
+                  <p className="text-xs font-bold text-error">{w.type}</p>
+                  <p className="text-[10px] text-onSurfaceVariant mt-1">{w.reason || 'بدون سبب'} — {new Date(w.issuedAt).toLocaleDateString('ar-EG')}</p>
+                </div>
+                <button 
+                  onClick={() => handleDeleteWarning(w.id)}
+                  disabled={deletingWarningId === w.id}
+                  className="bg-error/10 text-error hover:bg-error hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 disabled:opacity-50"
+                  title="رفع هذا التحذير الموجه للموظف وإلغائه"
+                >
+                  {deletingWarningId === w.id ? 'يتم الرفع...' : 'رفع التحذير 🗑️'}
+                </button>
               </div>
             )) : <p className="text-sm text-onSurfaceVariant">لا توجد تحذيرات 👍</p>}
           </div>
