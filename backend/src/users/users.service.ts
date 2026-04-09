@@ -62,6 +62,7 @@ export class UsersService {
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.fullName !== undefined) updateData.fullName = data.fullName;
+    if (data.username !== undefined) updateData.username = data.username;
     if (data.password) updateData.password = await bcrypt.hash(data.password, 10);
     if (data.age !== undefined) updateData.age = parseInt(data.age) || null;
     if (data.education !== undefined) updateData.education = data.education;

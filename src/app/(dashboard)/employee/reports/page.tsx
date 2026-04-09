@@ -121,9 +121,9 @@ export default function EmployeeReportsPage() {
       </div>
 
       {/* ══════════ REPORTS LIST ══════════ */}
-      <div className="flex flex-col gap-4 relative z-10">
+      <div className="flex flex-col gap-6 relative z-10 w-full pb-10">
         <h2 className="text-xl font-black text-onSurface flex items-center gap-2 mb-2 px-2">
-          <span>📜</span> سجل الروابط الأخيرة
+          <span>📜</span> السجل اليومي للتقارير
         </h2>
         
         {reports.length === 0 ? (
@@ -133,61 +133,91 @@ export default function EmployeeReportsPage() {
             <p className="text-xs text-onSurfaceVariant/60 max-w-xs leading-relaxed">بمجرد بدئك بمشاركة إنجازاتك اليومية، سيظهر السجل الخاص بك هنا بتفصيل أنيق.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {reports.map((report) => {
-              const sInfo = getStatusInfo(report.status);
-              const isRejected = report.status === 'REJECTED';
-              
+          (() => {
+            // Group by Date
+            const groupedReports: { [key: string]: Report[] } = {};
+            [...reports]
+              .sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+              .forEach(r => {
+                const d = r.dateString || 'غير محدد';
+                if (!groupedReports[d]) groupedReports[d] = [];
+                groupedReports[d].push(r);
+              });
+
+            return Object.keys(groupedReports).map(date => {
+              const dReports = groupedReports[date];
+              const accepted = dReports.filter(r => r.status === 'APPROVED' || r.status === 'ON_TIME').length;
+              const rejected = dReports.filter(r => r.status === 'REJECTED').length;
+              const pending = dReports.filter(r => r.status === 'PENDING').length;
+
               return (
-                <div key={report.id} className="relative overflow-hidden glass-card p-5 border border-outlineVariant/10 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
-                  <div className={`absolute top-0 right-0 w-1.5 h-full ${sInfo.bg.replace('/10', '').replace('/5', '')} opacity-70 group-hover:opacity-100 transition-opacity`}></div>
+                <div key={date} className="glass-card mb-4 border border-outlineVariant/20 overflow-hidden rounded-[2rem] shadow-sm hover:shadow-md transition-shadow">
+                  {/* Day Header */}
+                  <div className="bg-surfaceContainerLowest p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-outlineVariant/10 relative overflow-hidden">
+                    <div className="absolute right-0 top-0 w-2 h-full gradient-bg"></div>
+                    <h3 className="text-xl font-black flex items-center gap-2 pr-4 text-onSurface">
+                      <span className="text-2xl opacity-80">📅</span> {date}
+                    </h3>
+                    <div className="flex flex-wrap gap-2 text-xs font-bold">
+                      <span className="bg-surfaceContainer px-3 py-1.5 rounded-full text-onSurfaceVariant shadow-inner">المجموع: {dReports.length}</span>
+                      {accepted > 0 && <span className="bg-success/15 text-success px-3 py-1.5 rounded-full shadow-inner flex items-center gap-1"><span>✅</span> مقبول: {accepted}</span>}
+                      {pending > 0 && <span className="bg-warning/15 text-warning px-3 py-1.5 rounded-full shadow-inner flex items-center gap-1"><span>⏳</span> معلق: {pending}</span>}
+                      {rejected > 0 && <span className="bg-error/15 text-error px-3 py-1.5 rounded-full shadow-inner flex items-center gap-1 animate-pulse"><span>❌</span> مرفوض: {rejected}</span>}
+                    </div>
+                  </div>
                   
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 min-w-0 pr-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`inline-flex items-center gap-1.5 ${sInfo.bg} ${sInfo.color} px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider`}>
-                          <span>{sInfo.icon}</span> {sInfo.label}
-                        </span>
-                        <span className="text-[10px] text-onSurfaceVariant font-bold bg-surfaceContainerLow px-2 py-1 rounded-md">
-                          {report.dateString}
-                        </span>
-                      </div>
+                  {/* Day Videos */}
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface/30">
+                    {dReports.map(report => {
+                      const sInfo = getStatusInfo(report.status);
+                      const isRejected = report.status === 'REJECTED';
                       
-                      {report.tiktokUrl && report.status !== 'MISSED' ? (
-                        <a 
-                          href={report.tiktokUrl.startsWith('http') ? report.tiktokUrl : `https://${report.tiktokUrl}`} 
-                          target="_blank" rel="noreferrer" 
-                          className="block text-primary text-sm font-bold truncate max-w-[280px] hover:text-secondary transition-colors dir-ltr text-left" 
-                          dir="ltr"
-                        >
-                          {report.tiktokUrl}
-                        </a>
-                      ) : (
-                        <span className="block text-onSurfaceVariant/50 text-sm font-bold italic w-full text-right">لا يوجد رابط (لم يُرسل شيء)</span>
-                      )}
-                      
-                      {/* 🔴 Reject Reason Banner */}
-                      {isRejected && report.adminNotes && (
-                        <div className="mt-3 p-3 bg-error/10 border border-error/20 rounded-xl flex items-start gap-3 relative overflow-hidden">
-                          <div className="absolute -right-3 -top-3 text-4xl opacity-5">❌</div>
-                          <span className="text-xl shrink-0 mt-0.5">💬</span>
-                          <div>
-                            <p className="text-[10px] text-error font-black uppercase mb-0.5">ملاحظة المدير (سبب الرفض)</p>
-                            <p className="text-xs text-error font-bold leading-relaxed">{report.adminNotes}</p>
+                      return (
+                        <div key={report.id} className={`relative overflow-hidden bg-surfaceContainerLowest p-5 rounded-2xl border ${isRejected ? 'border-error/30 shadow-[0_0_15px_rgba(var(--error-rgb),0.1)]' : 'border-outlineVariant/10 hover:border-outlineVariant/30'} hover:-translate-y-1 transition-all duration-300 group`}>
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0 pr-1">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className={`inline-flex items-center gap-1.5 ${sInfo.bg} ${sInfo.color} px-3 py-1.5 rounded-lg text-xs font-black tracking-wider shadow-sm`}>
+                                  <span>{sInfo.icon}</span> {sInfo.label}
+                                </span>
+                                <span className="text-[10px] text-onSurfaceVariant font-bold bg-surfaceContainerLow px-2 py-1.5 rounded-lg border border-outlineVariant/5">
+                                  {new Date(report.submittedAt).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              </div>
+                              
+                              {report.tiktokUrl && report.status !== 'MISSED' ? (
+                                <a 
+                                  href={report.tiktokUrl.startsWith('http') ? report.tiktokUrl : `https://${report.tiktokUrl}`} 
+                                  target="_blank" rel="noreferrer" 
+                                  className="block text-primary text-sm font-bold truncate max-w-[280px] hover:text-secondary transition-colors dir-ltr text-left bg-surfaceContainerHigh px-3 py-2 rounded-xl border border-outlineVariant/5 mt-1" 
+                                  dir="ltr"
+                                >
+                                  {report.tiktokUrl}
+                                </a>
+                              ) : (
+                                <span className="block text-onSurfaceVariant/50 text-sm font-bold italic w-full text-right mt-1">لا يوجد رابط (لم يُرسل شيء)</span>
+                              )}
+                              
+                              {/* 🔴 Reject Reason Banner */}
+                              {isRejected && report.adminNotes && (
+                                <div className="mt-4 p-4 bg-error/10 border border-error/20 rounded-xl flex items-start gap-3 relative overflow-hidden">
+                                  <div className="absolute rtl:left-2 ltr:right-2 top-2 text-4xl opacity-10 blur-[1px]">❌</div>
+                                  <div className="relative z-10 w-full">
+                                    <p className="text-[10px] text-error font-black uppercase mb-1 flex items-center gap-1"><span>💬</span> سبب الرفض من الإدارة</p>
+                                    <p className="text-sm text-error font-bold leading-relaxed bg-surfaceContainerLowest/50 p-2 rounded-lg">{report.adminNotes}</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-col items-center justify-center shrink-0 border-r border-outlineVariant/10 pr-4">
-                      <span className="text-2xl opacity-60 group-hover:scale-110 transition-transform">{sInfo.icon}</span>
-                      <span className="text-[9px] text-onSurfaceVariant mt-2 text-center uppercase tracking-widest">{new Date(report.submittedAt).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
-            })}
-          </div>
+            });
+          })()
         )}
       </div>
     </div>

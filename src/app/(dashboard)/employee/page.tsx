@@ -83,6 +83,21 @@ export default function EmployeeDashboardPage() {
     });
   };
 
+  const [videoCountInput, setVideoCountInput] = useState<string>('');
+  const [setupMode, setSetupMode] = useState(true);
+
+  const handleSetupCount = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorString('');
+    const count = parseInt(videoCountInput);
+    if (count > 0 && count <= 20) {
+      setTiktokUrls(Array(count).fill(''));
+      setSetupMode(false);
+    } else {
+      setErrorString('يرجى إدخال عدد صحيح بين 1 و 20');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorString('');
@@ -93,14 +108,30 @@ export default function EmployeeDashboardPage() {
       return;
     }
 
-    // Automatically prepend https:// if missing to make the system smart
+    if (validUrls.length !== tiktokUrls.length) {
+      setErrorString('يرجى تعبئة جميع الخانات أو العودة لتغيير العدد.');
+      return;
+    }
+
+    // Automatically prepend https:// if missing
     const normalizedUrls = validUrls.map(u => u.startsWith('http') ? u : `https://${u}`);
+    const userPlatform = employeeData?.platform?.toLowerCase() || '';
 
     for (const url of normalizedUrls) {
-      // Smart check: accepts any domain (has a dot and no spaces)
       if (!url.includes('.') || url.includes(' ')) {
         setErrorString('يرجى إدخال روابط صحيحة (مثال: tiktok.com/@user)');
         return;
+      }
+      
+      // Smart Platform Restriction
+      if (userPlatform.includes('tiktok') || userPlatform.includes('تيك توك')) {
+        if (!url.includes('tiktok.com')) return setErrorString('لقد تم تخصيصك لنشر فيديوهات (تيك توك) فقط. يرجى إدخال روابط تيك توك.');
+      } else if (userPlatform.includes('insta') || userPlatform.includes('انستغرام') || userPlatform.includes('إنستغرام')) {
+        if (!url.includes('instagram.com')) return setErrorString('لقد تم تخصيصك لمنصة (إنستغرام) فقط. الروابط غير مطابقة.');
+      } else if (userPlatform.includes('youtube') || userPlatform.includes('يوتيوب')) {
+        if (!url.includes('youtube.com') && !url.includes('youtu.be')) return setErrorString('يرجى إدخال روابط يوتيوب صحيحة.');
+      } else if (userPlatform.includes('facebook') || userPlatform.includes('فيس') || userPlatform.includes('فيسبوك')) {
+        if (!url.includes('facebook.com') && !url.includes('fb.watch')) return setErrorString('يرجى إدخال روابط فيسبوك صحيحة.');
       }
     }
 
@@ -129,6 +160,8 @@ export default function EmployeeDashboardPage() {
       });
 
       setSubmitted(true);
+      setSetupMode(true);
+      setVideoCountInput('');
       setTiktokUrls(['']);
     } catch (e: any) {
       setErrorString(e.message || 'فشل الاتصال بالخادم.');
@@ -281,36 +314,59 @@ export default function EmployeeDashboardPage() {
               <div className="bg-error/10 text-error p-3 rounded-xl text-sm mb-4 border border-error/20 flex items-center gap-2"><b>تنبيه:</b> {errorString}</div>
             )}
 
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-bold text-onSurface">قائمة الروابط:</label>
-                  <button type="button" onClick={() => setTiktokUrls([...tiktokUrls, ''])} className="text-xs bg-surfaceContainerHigh hover:bg-secondary/10 hover:text-secondary px-3 py-1.5 rounded-lg text-onSurfaceVariant font-bold transition-colors">+ إضافة رابط آخر</button>
+            {setupMode ? (
+              <form onSubmit={handleSetupCount} className="bg-surfaceContainerLow p-8 rounded-2xl flex flex-col items-center gap-6 border-2 border-primary/20">
+                <div className="text-center">
+                  <h3 className="text-xl font-bold text-primary mb-2">مرحباً! كم عدد الفيديوهات التي نشرتها اليوم؟</h3>
+                  <p className="text-sm text-onSurfaceVariant">يرجى إدخال العدد الدقيق لفتح الخانات المخصصة لك.</p>
                 </div>
-                {tiktokUrls.map((url, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <input
-                      type="text" value={url}
-                      onChange={e => { const n = [...tiktokUrls]; n[idx] = e.target.value; setTiktokUrls(n); }}
-                      placeholder="tiktok.com/@username/video/..."
-                      className="flex-1 bg-surfaceContainerLow focus:bg-surface text-onSurface p-4 rounded-xl outline-none focus:ring-2 focus:ring-primary/50 border border-outlineVariant/20 text-left dir-ltr text-sm font-mono transition-all"
-                      dir="ltr" required
-                    />
-                    {tiktokUrls.length > 1 && (
-                      <button type="button" onClick={() => setTiktokUrls(tiktokUrls.filter((_, i) => i !== idx))} className="text-error bg-error/5 hover:bg-error/20 px-4 rounded-xl transition-colors font-bold">✕</button>
-                    )}
+                <div className="flex items-center gap-4 w-full max-w-sm">
+                  <input
+                    type="number"
+                    min="1" max="20"
+                    required
+                    value={videoCountInput}
+                    onChange={(e) => setVideoCountInput(e.target.value)}
+                    className="flex-1 bg-surface p-4 rounded-xl outline-none focus:ring-2 focus:ring-primary/50 border border-outlineVariant/20 text-center text-2xl font-black"
+                    placeholder="0"
+                  />
+                  <button type="submit" className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-md transition-all active:scale-95">استمرار ➔</button>
+                </div>
+              </form>
+            ) : (
+              <form className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4" onSubmit={handleSubmit}>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm font-bold text-onSurface flex items-center gap-2">
+                      <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">{tiktokUrls.length}</span>
+                      قائمة الروابط (منصة: {employeeData?.platform || 'غير محدد'}):
+                    </label>
+                    <button type="button" onClick={() => setSetupMode(true)} className="text-xs bg-surfaceContainerHigh hover:bg-error/10 hover:text-error px-3 py-1.5 rounded-lg text-onSurfaceVariant font-bold transition-colors">تعديل العدد</button>
                   </div>
-                ))}
-              </div>
-              
-              <button type="submit" className="mt-2 text-white font-bold py-4 rounded-xl hover:opacity-90 transition-all shadow-ambient transform hover:-translate-y-1" style={{ background: 'linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%)' }} disabled={submitted}>
-                {submitted ? '⏳ تم الإرسال للمدير وهو الآن يراجعها، انتظر رده' : `إرسال (${tiktokUrls.filter(u => u.trim()).length}) روابط`}
-              </button>
-              
-              {submitted && (
-                <button type="button" onClick={() => { setSubmitted(false); setTiktokUrls(['']); }} className="text-primary text-sm font-bold hover:underline mx-auto block mt-2">إضافة تقارير جديدة</button>
-              )}
-            </form>
+                  {tiktokUrls.map((url, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <div className="bg-surfaceContainerHigh text-onSurfaceVariant font-bold w-10 flex items-center justify-center rounded-xl border border-outlineVariant/10">{idx + 1}</div>
+                      <input
+                        type="text" value={url}
+                        onChange={e => { const n = [...tiktokUrls]; n[idx] = e.target.value; setTiktokUrls(n); }}
+                        placeholder={`الصق الرابط رقم ${idx + 1} هنا...`}
+                        className="flex-1 bg-surfaceContainerLow focus:bg-surface text-onSurface p-4 rounded-xl outline-none focus:ring-2 focus:ring-primary/50 border border-outlineVariant/20 text-left dir-ltr text-sm font-mono transition-all"
+                        dir="ltr" required
+                      />
+                    </div>
+                  ))}
+                </div>
+                
+                <button type="submit" className="mt-4 text-white font-bold py-4 rounded-xl hover:opacity-90 transition-all shadow-ambient transform hover:-translate-y-1 relative overflow-hidden group" style={{ background: 'linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%)' }} disabled={submitted}>
+                  <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-700 -translate-x-full skew-x-12"></div>
+                  {submitted ? '⏳ تم الإرسال للمدير وهو الآن يراجعها، انتظر رده' : `إرسال الروابط واعتماد الحضور 🚀`}
+                </button>
+                
+                {submitted && (
+                  <button type="button" onClick={() => { setSubmitted(false); setSetupMode(true); setVideoCountInput(''); setTiktokUrls(['']); }} className="text-primary text-sm font-bold hover:underline mx-auto block mt-2">تقديم تقارير يوم جديد</button>
+                )}
+              </form>
+            )}
           </div>
         </div>
 

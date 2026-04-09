@@ -40,34 +40,58 @@ export default function EmployeeDetailsPage() {
   const [blockReason, setBlockReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Password Reset
+  // Login Info Update
+  const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [resettingPassword, setResettingPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState('');
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  // Sync username when employee loads
+  useEffect(() => {
+    if (emp && emp.username && !newUsername) {
+      setNewUsername(emp.username);
+    }
+  }, [emp]);
+
+  const handleUpdateLoginInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 6) {
-      setPasswordStatus('كلمة المرور يجب أن لا تقل عن 6 أحرف');
+    if (!newUsername || newUsername.trim() === '') {
+      setPasswordStatus('❌ اسم المستخدم مطلوب');
       return;
     }
+    
+    // If password is typed, validate it
+    const isNewPassword = newPassword.trim().length > 0;
+    if (isNewPassword && newPassword.length < 6) {
+      setPasswordStatus('❌ كلمة المرور يجب أن لا تقل عن 6 أحرف');
+      return;
+    }
+
     setResettingPassword(true);
     setPasswordStatus('');
     try {
+      const payload: any = { username: newUsername.trim() };
+      if (isNewPassword) {
+        payload.password = newPassword.trim();
+      }
+
       const res = await fetch((process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/users/' + id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-        body: JSON.stringify({ password: newPassword })
+        body: JSON.stringify(payload)
       });
+      
+      const resData = await res.json().catch(() => ({}));
       if (res.ok) {
-        setPasswordStatus('✅ تم تغيير كلمة المرور بنجاح للموظف');
-        setNewPassword('');
+        setPasswordStatus('✅ تم تحديث بيانات الدخول بنجاح');
+        if (isNewPassword) setNewPassword('');
+        fetchDetails(); // to refresh emp.username if it changed
         setTimeout(() => setPasswordStatus(''), 4000);
       } else {
-        setPasswordStatus('❌ حدث خطأ أثناء التغيير');
+        setPasswordStatus(`❌ ${resData.message || 'حدث خطأ أثناء التحديث (قد يكون اسم المستخدم محجوزاً)'}`);
       }
     } catch (err) {
-      setPasswordStatus('❌ خطأ في الاتصال');
+      setPasswordStatus('❌ خطأ في الاتصال بالخادم');
     }
     setResettingPassword(false);
   };
@@ -301,39 +325,59 @@ export default function EmployeeDetailsPage() {
         <h2 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
           <span>🔐</span> معلومات تسجيل الدخول (الحساب)
         </h2>
-        <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-surfaceContainerLowest p-4 rounded-xl border border-outlineVariant/10">
-          <div className="flex-1 w-full">
-            <p className="text-sm font-bold mb-1">اسم المستخدم (للدخول):</p>
-            <p className="font-mono text-lg bg-surfaceContainerLow px-4 py-2 rounded-lg dir-ltr inline-block text-primary font-bold shadow-inner">
-              {emp.username}
-            </p>
-            <p className="text-xs text-onSurfaceVariant mt-2">
-              ⚠️ كلمة المرور الحالية مشفرة ولا يمكن لأحد رؤيتها. في حال نسيانها، يمكنك تعيين كلمة مرور جديدة من هنا.
-            </p>
+        <div className="flex flex-col md:flex-row gap-6 items-start justify-between bg-surfaceContainerLowest p-4 rounded-xl border border-outlineVariant/10">
+          <div className="flex-1 w-full relative">
+            <p className="text-sm font-bold mb-3 text-onSurfaceVariant">بيانات الدخول الحالية:</p>
+            <div className="bg-surfaceContainerLow p-3 rounded-xl inline-flex flex-col md:flex-row gap-4 border border-outlineVariant/5 w-full">
+              <div>
+                <span className="text-[10px] text-onSurfaceVariant font-bold uppercase tracking-wider block mb-1">اسم المستخدم (Username)</span>
+                <span className="font-mono text-lg text-primary font-black dir-ltr inline-block">@{emp.username}</span>
+              </div>
+              <div className="hidden md:block w-px bg-outlineVariant/10"></div>
+              <div>
+                <span className="text-[10px] text-onSurfaceVariant font-bold uppercase tracking-wider block mb-1">كلمة المرور (Password)</span>
+                <span className="font-mono text-lg text-onSurface font-bold opacity-30 mt-1 block">••••••••</span>
+              </div>
+            </div>
           </div>
           
-          <form onSubmit={handleResetPassword} className="flex gap-2 w-full md:w-auto items-start">
+          <form onSubmit={handleUpdateLoginInfo} className="flex flex-col gap-3 w-full md:w-[350px] bg-surfaceContainerHigh/30 p-4 rounded-2xl border border-outlineVariant/10">
             <div className="flex flex-col gap-1 w-full">
+              <label className="text-xs font-bold text-onSurfaceVariant">تغيير اسم المستخدم (اختياري)</label>
+              <input 
+                type="text" 
+                placeholder="اسم المستخدم" 
+                value={newUsername}
+                onChange={e => setNewUsername(e.target.value)}
+                className="bg-surfaceContainer p-3 rounded-xl outline-none text-sm font-mono dir-ltr w-full border border-outlineVariant/20 focus:border-primary transition-colors"
+                dir="ltr"
+              />
+            </div>
+            <div className="flex flex-col gap-1 w-full">
+              <label className="text-xs font-bold text-onSurfaceVariant">تغيير كلمة المرور (اتركه فارغاً لعدم التغيير)</label>
               <input 
                 type="text" 
                 placeholder="كلمة المرور الجديدة" 
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="bg-surfaceContainerHigh p-3 rounded-xl outline-none text-sm font-mono dir-ltr w-full md:w-64 border border-outlineVariant/20 focus:border-primary transition-colors"
+                className="bg-surfaceContainer p-3 rounded-xl outline-none text-sm font-mono dir-ltr w-full border border-outlineVariant/20 focus:border-primary transition-colors"
+                dir="ltr"
               />
-              {passwordStatus && (
-                <p className={`text-[10px] font-bold px-1 ${passwordStatus.includes('✅') ? 'text-success' : 'text-error'}`}>
-                  {passwordStatus}
-                </p>
-              )}
             </div>
+            
             <button 
               type="submit" 
               disabled={resettingPassword}
-              className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold text-sm disabled:opacity-50 whitespace-nowrap shadow-md"
+              className="bg-primary hover:bg-primary/90 text-white w-full py-3 mt-1 rounded-xl font-bold text-sm disabled:opacity-50 shadow-md transition-all active:scale-95"
             >
-              {resettingPassword ? 'جاري التغيير...' : 'إعادة تعيين'}
+              {resettingPassword ? 'جاري الحفظ...' : 'تحديث بيانات الدخول 🔄'}
             </button>
+            
+            {passwordStatus && (
+              <p className={`text-[10px] mt-1 font-bold px-1 text-center ${passwordStatus.includes('✅') ? 'text-success' : 'text-error'}`}>
+                {passwordStatus}
+              </p>
+            )}
           </form>
         </div>
       </div>
