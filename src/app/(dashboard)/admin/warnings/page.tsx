@@ -28,8 +28,9 @@ interface WarningRequest {
 export default function WarningsPage() {
   const [pending, setPending] = useState<WarningRequest[]>([]);
   const [history, setHistory] = useState<WarningRequest[]>([]);
+  const [issued, setIssued] = useState<any[]>([]); // Added issued warnings state
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [tab, setTab] = useState<'pending' | 'history' | 'new'>('pending');
+  const [tab, setTab] = useState<'pending' | 'history' | 'new' | 'issued'>('pending');
   const [loading, setLoading] = useState(true);
 
   // New warning request form
@@ -37,6 +38,7 @@ export default function WarningsPage() {
   const [warningType, setWarningType] = useState('عدم إرسال تقرير');
   const [warningReason, setWarningReason] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
+  const [deletingWarningId, setDeletingWarningId] = useState<string | null>(null);
 
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
@@ -45,16 +47,40 @@ export default function WarningsPage() {
     Promise.all([
       fetch(API_URL + '/users/warnings/pending', { headers: { 'Authorization': 'Bearer ' + token } }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).catch((err) => { console.error('فشل جلب التحذيرات المعلقة:', err); return []; }),
       fetch(API_URL + '/users/warnings/all', { headers: { 'Authorization': 'Bearer ' + token } }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).catch((err) => { console.error('فشل جلب سجل التحذيرات:', err); return []; }),
+      fetch(API_URL + '/users/warnings/issued', { headers: { 'Authorization': 'Bearer ' + token } }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).catch((err) => { console.error('فشل جلب التحذيرات الصادرة:', err); return []; }),
       fetch(API_URL + '/users', { headers: { 'Authorization': 'Bearer ' + token } }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).catch((err) => { console.error('فشل جلب الموظفين:', err); return []; }),
-    ]).then(([p, h, e]) => {
+    ]).then(([p, h, i, e]) => {
       setPending(Array.isArray(p) ? p : []);
       setHistory(Array.isArray(h) ? h : []);
+      setIssued(Array.isArray(i) ? i : []);
       setEmployees(Array.isArray(e) ? e : []);
       setLoading(false);
     });
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const handleDeleteWarning = async (id: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا التحذير؟ سيتم مسحه نهائياً من سجل الموظف.')) return;
+    setDeletingWarningId(id);
+    try {
+      const res = await fetch(`${API_URL}/users/warnings/issued/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      if (res.ok) {
+        setStatusMsg('تم رفع التحذير بنجاح! 👍');
+        fetchData();
+        setTimeout(() => setStatusMsg(''), STATUS_MSG_DURATION);
+      } else {
+        alert('حدث خطأ أثناء رفع التحذير.');
+      }
+    } catch (err) {
+      alert('خطأ في الاتصال بالخادم.');
+    } finally {
+      setDeletingWarningId(null);
+    }
+  };
 
   const handleApprove = async (id: string) => {
     try {
@@ -129,12 +155,15 @@ export default function WarningsPage() {
       {statusMsg && <div className="bg-success/10 text-success p-3 rounded-xl text-sm font-bold border border-success/20">{statusMsg}</div>}
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-surfaceContainerLowest p-1.5 rounded-2xl w-fit">
+      <div className="flex gap-2 flex-wrap bg-surfaceContainerLowest p-1.5 rounded-2xl w-fit">
         <button onClick={() => setTab('pending')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'pending' ? 'gradient-bg text-white shadow-ambient' : 'text-onSurfaceVariant hover:bg-surfaceContainerHigh'}`}>
           بانتظار الموافقة ({pending.length})
         </button>
         <button onClick={() => setTab('new')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'new' ? 'gradient-bg text-white shadow-ambient' : 'text-onSurfaceVariant hover:bg-surfaceContainerHigh'}`}>
           إنشاء طلب تحذير
+        </button>
+        <button onClick={() => setTab('issued')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'issued' ? 'gradient-bg text-white shadow-ambient' : 'text-onSurfaceVariant hover:bg-surfaceContainerHigh'}`}>
+          التحذيرات الصادرة ({issued.length})
         </button>
         <button onClick={() => setTab('history')} className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'history' ? 'gradient-bg text-white shadow-ambient' : 'text-onSurfaceVariant hover:bg-surfaceContainerHigh'}`}>
           السجل الكامل ({history.length})
@@ -209,6 +238,36 @@ export default function WarningsPage() {
             </div>
             <button type="submit" className="bg-error text-white font-bold p-4 rounded-xl hover:opacity-90 transition-opacity">إنشاء طلب التحذير ⚠️</button>
           </form>
+        </div>
+      )}
+
+      {/* Issued Warnings Tab */}
+      {tab === 'issued' && (
+        <div className="flex flex-col gap-3">
+          {issued.length === 0 ? (
+            <div className="text-center p-16 text-onSurfaceVariant glass-card"><p>لا توجد تحذيرات صادرة حالياً.</p></div>
+          ) : issued.map((warning: any) => (
+            <div key={warning.id} className="glass-card p-4 flex items-center justify-between border-r-4 border-error">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 bg-error/10 text-error">
+                  ⚠️
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">{warning.employee?.fullName || warning.employee?.name} — {warning.type}</p>
+                  <p className="text-[10px] text-onSurfaceVariant mt-0.5">{warning.reason || 'بدون سبب إضافي'}</p>
+                  <p className="text-[10px] text-onSurfaceVariant mt-0.5">صدر في: {new Date(warning.issuedAt).toLocaleDateString('ar-EG')}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => handleDeleteWarning(warning.id)}
+                disabled={deletingWarningId === warning.id}
+                className="bg-error/10 text-error hover:bg-error hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shrink-0 disabled:opacity-50"
+                title="تراجع عن اصدار هذا التحذير ومسحه نهائيا"
+              >
+                {deletingWarningId === warning.id ? 'يتم المسح...' : '🗑️ مسح التحذير'}
+              </button>
+            </div>
+          ))}
         </div>
       )}
 

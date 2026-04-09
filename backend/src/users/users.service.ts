@@ -175,11 +175,19 @@ export class UsersService {
   // Get all warning requests (history)
   async getAllWarningRequests() {
     return this.prisma.warningRequest.findMany({
-      include: { employee: { select: { id: true, name: true, fullName: true, photo1: true } } },
+      include: { employee: { select: { id: true, name: true, fullName: true, photo1: true, username: true } } },
       orderBy: { createdAt: 'desc' }
     });
   }
 
+  async getIssuedWarnings() {
+    return this.prisma.warning.findMany({
+      include: { employee: { select: { id: true, name: true, fullName: true, photo1: true, username: true } } },
+      orderBy: { issuedAt: 'desc' }
+    });
+  }
+
+  // ==================== WARNING OPERATIONS ====================
   // Approve warning request — creates an actual Warning
   async approveWarningRequest(requestId: string) {
     const req = await this.prisma.warningRequest.update({

@@ -132,10 +132,19 @@ export class UsersController {
   // ===== WARNING REQUESTS =====
 
   @Get('warnings/pending')
-  getPendingWarnings() { return this.usersService.getPendingWarningRequests(); }
+  getPendingWarningRequests() {
+    return this.usersService.getPendingWarningRequests();
+  }
 
   @Get('warnings/all')
-  getAllWarnings() { return this.usersService.getAllWarningRequests(); }
+  getAllWarningRequests() {
+    return this.usersService.getAllWarningRequests();
+  }
+
+  @Get('warnings/issued')
+  getIssuedWarnings() {
+    return this.usersService.getIssuedWarnings();
+  }
 
   @Post('warnings/request')
   createWarningRequest(@Body() body: { employeeId: string; type: string; reason: string }) {
