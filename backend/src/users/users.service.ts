@@ -113,7 +113,7 @@ export class UsersService {
     return this.prisma.employee.findUnique({
       where: { id },
       include: {
-        reports: { orderBy: { submittedAt: 'desc' } },
+        reports: { orderBy: { submittedAt: 'desc' }, take: 50 },
         warnings: { orderBy: { issuedAt: 'desc' } },
         rewards: { orderBy: { issuedAt: 'desc' } },
         receivedNotes: { orderBy: { createdAt: 'desc' } },
@@ -459,24 +459,47 @@ export class UsersService {
   // ==================== STATISTICS ====================
 
   async getStats() {
-    const totalEmployees = await this.prisma.employee.count();
-    const totalReports = await this.prisma.report.count();
-    const totalWarnings = await this.prisma.warning.count();
-    const totalRewards = await this.prisma.reward.count();
-    const totalSalaryPaid = await this.prisma.salaryRecord.aggregate({ _sum: { amount: true } });
-    const pendingWarnings = await this.prisma.warningRequest.count({ where: { status: 'PENDING' } });
-    
     const today = new Date().toISOString().split('T')[0];
-    const attendanceToday = await this.prisma.attendanceRecord.count({ where: { date: today } });
+    
+    // Calculate date 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-    // Reports per day for last 7 days
+    // Run ALL queries in parallel instead of sequentially
+    const [
+      totalEmployees,
+      totalReports,
+      totalWarnings,
+      totalRewards,
+      totalSalaryPaid,
+      pendingWarnings,
+      attendanceToday,
+      reportsLast7DaysRaw
+    ] = await Promise.all([
+      this.prisma.employee.count(),
+      this.prisma.report.count(),
+      this.prisma.warning.count(),
+      this.prisma.reward.count(),
+      this.prisma.salaryRecord.aggregate({ _sum: { amount: true } }),
+      this.prisma.warningRequest.count({ where: { status: 'PENDING' } }),
+      this.prisma.attendanceRecord.count({ where: { date: today } }),
+      // Single query for all 7 days using groupBy
+      this.prisma.report.groupBy({
+        by: ['dateString'],
+        _count: { id: true },
+        where: { dateString: { gte: sevenDaysAgoStr, lte: today } }
+      })
+    ]);
+
+    // Build the 7-day array from groupBy results
+    const countMap = new Map(reportsLast7DaysRaw.map((r: any) => [r.dateString, r._count.id]));
     const last7Days: any[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
-      const count = await this.prisma.report.count({ where: { dateString: dateStr } });
-      last7Days.push({ date: dateStr, count });
+      last7Days.push({ date: dateStr, count: countMap.get(dateStr) || 0 });
     }
 
     return {

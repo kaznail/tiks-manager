@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
+import * as compression from 'compression';
 
 async function bootstrap() {
   if (!fs.existsSync('./uploads')) {
@@ -11,6 +12,9 @@ async function bootstrap() {
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.enableCors(); // Allow requests from Next.js frontend
+
+  // Compress all responses (reduces payload size by ~60-70%)
+  app.use(compression());
 
   // Security Headers Initialization (protects against XSS, clickjacking, etc.)
   app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
