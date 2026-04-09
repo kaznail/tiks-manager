@@ -44,7 +44,6 @@ export default function EmployeeDetailsPage() {
   const [photoTarget, setPhotoTarget] = useState<'photo1' | 'photo2' | 'photo3' | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [contractFile, setContractFile] = useState<File | null>(null);
 
   const [deletingWarningId, setDeletingWarningId] = useState<string | null>(null);
 
